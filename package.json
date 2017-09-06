@@ -1,5 +1,5 @@
 {
-    "name": "@raceloop/stripe.raceloop",
+    "name": "@raceloop/stripe-connect",
     "version": "1.0.0",
     "description": "A Typescript library for interacting with standalone accounts of the Stipe Connect API",
     "private": false,
@@ -8,7 +8,7 @@
         "type": "git",
         "url": "git+https://github.com/raceloop/stripe.raceloop.git"
     },
-    "author": "Raceloop",
+    "author": "Jordan Thomas - Raceloop",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/raceloop/stripe.raceloop/issues"
