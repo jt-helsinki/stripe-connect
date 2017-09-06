@@ -1,0 +1,48 @@
+# OS-specific
+#########################
+
+$RECYCLE.BIN/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE-specific
+#########################
+
+.idea/
+.settings/
+.project
+.classpath
+*.launch
+*.iml
+
+# general
+#########################
+
+.tmp/
+tmp/
+temp/
+dist/
+build/
+logs/
+npm-debug.log
+
+# project-specific
+#########################
+
+node_modules/
+ts-node/
+coverage/
+*.js
+*.js.map
+.nyc_output
+coverage
+LICENSE
+package-lock.json
+/test/TestingStripeConnectionConfiguration.ts

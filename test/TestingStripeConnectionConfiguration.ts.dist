@@ -1,0 +1,19 @@
+import {StripeConnectConfiguration} from "../src/configuration/StripeConnectConfiguration";
+
+export class TestingStripeConnectionConfiguration {
+
+
+    // -------------------------------------------------------------------------
+    // Static functions.
+    // -------------------------------------------------------------------------
+
+    static config(): StripeConnectConfiguration {
+        const config: StripeConnectConfiguration = new StripeConnectConfiguration();
+        config.stripeConnectAuthorizeURL = 'https://connect.stripe.com/oauth/token';
+        config.stripeConnectDeAuthorizeURL = 'https://connect.stripe.com/oauth/deauthorize';
+        config.stripeClientId = 'ca_xxxxxxxxxxxxxxxxx';
+        config.stripeSecretKey = 'sk_test_xxxxxxxxxxxxxxxxxxxxxx';
+        return config;
+    }
+
+}
