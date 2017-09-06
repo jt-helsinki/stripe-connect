@@ -43,6 +43,5 @@ coverage/
 *.js.map
 .nyc_output
 coverage
-LICENSE
 package-lock.json
 /test/TestingStripeConnectionConfiguration.ts
