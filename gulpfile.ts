@@ -1,21 +1,21 @@
-///<reference path="node_modules/@types/node/index.d.ts"/>
-///<reference path="node_modules/@types/chai/index.d.ts"/>
-///<reference path="node_modules/@types/mocha/index.d.ts"/>
+///<reference path='node_modules/@types/node/index.d.ts'/>
+///<reference path='node_modules/@types/chai/index.d.ts'/>
+///<reference path='node_modules/@types/mocha/index.d.ts'/>
 
-import {Gulpclass, Task, SequenceTask, MergedTask} from "gulpclass";
+import {Gulpclass, Task, SequenceTask, MergedTask} from 'gulpclass';
 
-const gulp = require("gulp");
-const del = require("del");
-const shell = require("gulp-shell");
-const replace = require("gulp-replace");
-const mocha = require("gulp-mocha");
-const chai = require("chai");
-const tslint = require("gulp-tslint");
-const stylish = require("tslint-stylish");
-const sourcemaps = require("gulp-sourcemaps");
-const istanbul = require("gulp-istanbul");
-const remapIstanbul = require("remap-istanbul/lib/gulpRemapIstanbul");
-const ts = require("gulp-typescript");
+const gulp = require('gulp');
+const del = require('del');
+const shell = require('gulp-shell');
+const replace = require('gulp-replace');
+const mocha = require('gulp-mocha');
+const chai = require('chai');
+const tslint = require('gulp-tslint');
+const stylish = require('tslint-stylish');
+const sourcemaps = require('gulp-sourcemaps');
+const istanbul = require('gulp-istanbul');
+const remapIstanbul = require('remap-istanbul/lib/gulpRemapIstanbul');
+const ts = require('gulp-typescript');
 const args = require('yargs').argv;
 
 @Gulpclass()
@@ -30,7 +30,7 @@ export class Gulpfile {
      */
     @Task()
     clean(cb: Function) {
-        return del(["./build/**"], cb);
+        return del(['./build/**'], cb);
     }
 
     /**
@@ -38,8 +38,8 @@ export class Gulpfile {
      */
     @Task()
     compile() {
-        return gulp.src("package.json", { read: false })
-            .pipe(shell(["npm run compile"]));
+        return gulp.src('package.json', { read: false })
+            .pipe(shell(['npm run compile']));
     }
 
     // -------------------------------------------------------------------------
@@ -51,9 +51,9 @@ export class Gulpfile {
      */
     @Task()
     packagePublish() {
-        return gulp.src("package.json", { read: false })
+        return gulp.src('package.json', { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish --access=public"
+                'cd ./build/package && npm publish --access=public'
             ]));
     }
 
@@ -62,9 +62,9 @@ export class Gulpfile {
      */
     @Task()
     packagePublishNext() {
-        return gulp.src("package.json", { read: false })
+        return gulp.src('package.json', { read: false })
             .pipe(shell([
-                "cd ./build/package && npm publish --access=public --tag next"
+                'cd ./build/package && npm publish --access=public --tag next'
             ]));
     }
 
@@ -73,16 +73,16 @@ export class Gulpfile {
      */
     @MergedTask()
     packageCompile() {
-        const tsProject = ts.createProject("tsconfig.json", { typescript: require("typescript") });
-        const tsResult = gulp.src(["./src/**/*.ts", "./node_modules/@types/**/*.ts"])
+        const tsProject = ts.createProject('tsconfig.json', { typescript: require('typescript') });
+        const tsResult = gulp.src(['./src/**/*.ts', './node_modules/@types/**/*.ts'])
             .pipe(sourcemaps.init())
             .pipe(tsProject())
 
         return [
-            tsResult.dts.pipe(gulp.dest("./build/package")),
+            tsResult.dts.pipe(gulp.dest('./build/package')),
             tsResult.js
-                .pipe(sourcemaps.write(".", { sourceRoot: "", includeContent: true }))
-                .pipe(gulp.dest("./build/package"))
+                .pipe(sourcemaps.write('.', { sourceRoot: '', includeContent: true }))
+                .pipe(gulp.dest('./build/package'))
         ];
     }
 
@@ -91,8 +91,8 @@ export class Gulpfile {
      */
     @Task()
     packageMoveCompiledFiles() {
-        return gulp.src("./build/package/src/**/*")
-            .pipe(gulp.dest("./build/package"));
+        return gulp.src('./build/package/src/**/*')
+            .pipe(gulp.dest('./build/package'));
     }
 
     /**
@@ -100,10 +100,10 @@ export class Gulpfile {
      */
     @Task()
     packageReplaceReferences() {
-        return gulp.src("./build/package/**/*.d.ts")
-            .pipe(replace(`/// <reference types="node" />`, ""))
-            .pipe(replace(`/// <reference types="chai" />`, ""))
-            .pipe(gulp.dest("./build/package"));
+        return gulp.src('./build/package/**/*.d.ts')
+            .pipe(replace(`/// <reference types='node' />`, ''))
+            .pipe(replace(`/// <reference types='chai' />`, ''))
+            .pipe(gulp.dest('./build/package'));
     }
 
     /**
@@ -112,18 +112,18 @@ export class Gulpfile {
     @Task()
     packageClearPackageDirectory(cb: Function) {
         return del([
-            "build/package/src/**"
+            'build/package/src/**'
         ], cb);
     }
 
     /**
-     * Change the "private" state of the packaged package.json file to public.
+     * Change the 'private' state of the packaged package.json file to public.
      */
     @Task()
     packagePreparePackageFile() {
-        return gulp.src("./package.json")
-            .pipe(replace("\"private\": true,", "\"private\": false,"))
-            .pipe(gulp.dest("./build/package"));
+        return gulp.src('./package.json')
+            .pipe(replace('\'private\': true,', '\'private\': false,'))
+            .pipe(gulp.dest('./build/package'));
     }
 
     /**
@@ -131,9 +131,9 @@ export class Gulpfile {
      */
     @Task()
     packageCopyReadme() {
-        return gulp.src("./README.md")
-            .pipe(replace(/```typescript([\s\S]*?)```/g, "```javascript$1```"))
-            .pipe(gulp.dest("./build/package"));
+        return gulp.src('./README.md')
+            .pipe(replace(/```typescript([\s\S]*?)```/g, '```javascript$1```'))
+            .pipe(gulp.dest('./build/package'));
     }
 
     /**
@@ -142,16 +142,16 @@ export class Gulpfile {
     @SequenceTask()
     package() {
         return [
-            "tests",
-            "clean",
-            "compile",
-            "packageCompile",
-            "packageMoveCompiledFiles",
+            'tests',
+            'clean',
+            'compile',
+            'packageCompile',
+            'packageMoveCompiledFiles',
             [
-                "packageClearPackageDirectory",
-                "packageReplaceReferences",
-                "packagePreparePackageFile",
-                "packageCopyReadme"
+                'packageClearPackageDirectory',
+                'packageReplaceReferences',
+                'packagePreparePackageFile',
+                'packageCopyReadme'
             ],
         ];
     }
@@ -161,15 +161,15 @@ export class Gulpfile {
      */
     @SequenceTask()
     publish() {
-        return ["package", "packagePublish"];
+        return ['package', 'packagePublish'];
     }
 
     /**
      * Creates a package and publishes it to npm with @next tag.
      */
-    @SequenceTask("publish-next")
+    @SequenceTask('publish-next')
     publishNext() {
-        return ["package", "packagePublishNext"];
+        return ['package', 'packagePublishNext'];
     }
 
     // -------------------------------------------------------------------------
@@ -181,9 +181,9 @@ export class Gulpfile {
      */
     @Task()
     tslint() {
-        return gulp.src(["./src/**/*.ts", "./test/**/*.ts"])
+        return gulp.src(['./src/**/*.ts', './test/**/*.ts'])
             // .pipe(tslint({
-            //     formatter: "verbose"
+            //     formatter: 'verbose'
             // }))
             .pipe(tslint.report(stylish, {
                 emitError: true,
@@ -197,7 +197,7 @@ export class Gulpfile {
      */
     @Task()
     coveragePre() {
-        return gulp.src(["./build/compiled/src/**/*.js"])
+        return gulp.src(['./build/compiled/src/**/*.js'])
             .pipe(istanbul())
             .pipe(istanbul.hookRequire());
     }
@@ -205,13 +205,13 @@ export class Gulpfile {
     /**
      * Runs post coverage operations.
      */
-    @Task("coveragePost", ["coveragePre"])
+    @Task('coveragePost', ['coveragePre'])
     coveragePost() {
         chai.should();
-        chai.use(require("sinon-chai"));
-        chai.use(require("chai-as-promised"));
+        chai.use(require('sinon-chai'));
+        chai.use(require('chai-as-promised'));
 
-        return gulp.src(["./build/compiled/test/**/*.js"])
+        return gulp.src(['./build/compiled/test/**/*.js'])
             .pipe(mocha({
                 bail: true,
                 grep: !!args.grep ? new RegExp(args.grep) : undefined,
@@ -226,10 +226,10 @@ export class Gulpfile {
     @Task()
     quickTests() {
         chai.should();
-        chai.use(require("sinon-chai"));
-        chai.use(require("chai-as-promised"));
+        chai.use(require('sinon-chai'));
+        chai.use(require('chai-as-promised'));
 
-        return gulp.src(["./build/compiled/test/**/*.js"])
+        return gulp.src(['./build/compiled/test/**/*.js'])
             .pipe(mocha({
                 bail: true,
                 timeout: 15000
@@ -238,9 +238,9 @@ export class Gulpfile {
 
     @Task()
     coverageRemap() {
-        return gulp.src("./coverage/coverage-final.json")
+        return gulp.src('./coverage/coverage-final.json')
             .pipe(remapIstanbul())
-            .pipe(gulp.dest("./coverage"));
+            .pipe(gulp.dest('./coverage'));
     }
 
     /**
@@ -248,7 +248,7 @@ export class Gulpfile {
      */
     @SequenceTask()
     tests() {
-        return ["compile", "tslint", "coveragePost", "coverageRemap"];
+        return ['compile', 'tslint', 'coveragePost', 'coverageRemap'];
     }
 
     /**
@@ -256,7 +256,7 @@ export class Gulpfile {
      */
     @SequenceTask()
     mocha() {
-        return ["compile", "quickTests"];
+        return ['compile', 'quickTests'];
     }
 
 }

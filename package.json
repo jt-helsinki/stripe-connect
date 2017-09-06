@@ -76,7 +76,7 @@
         "test": "gulp tests",
         "compile": "tsc",
         "package": "gulp package",
-        "publish": "npm run test && gulp publish",
-        "publish-next": "npm run test && gulp publishNext"
+        "publish": "gulp publish",
+        "publish-next": "gulp publishNext"
     }
 }

@@ -72,7 +72,7 @@ export class StripeConnect {
      * This endpoint is used for revoking access to an account.
      *
      *  Ordinarily this should be:
-     *  
+     *
      *      https://connect.stripe.com/oauth/deauthorize
      */
     private stripeConnectDeAuthorizeURL: string;
@@ -83,7 +83,7 @@ export class StripeConnect {
 
     /**
      * Constructructs a new object.
-     * 
+     *
      * @param configuration The configuration object used to connect this instance to the Stripe payment gateway.
      */
     constructor(configuration: StripeConnectConfiguration) {
@@ -106,15 +106,16 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Customer object.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#create_customer
      */
     async createCustomer(email: string, tokenId: string): Promise<any> {
         try {
-            let customer = await stripe(this.stripeSecretKey).customers.create({
+            return stripe(this.stripeSecretKey).customers.create({
                 email: email,
                 source: tokenId,
             });
-            return customer;
         } catch (error) {
             throw new CardError(error);
         }
@@ -135,13 +136,14 @@ export class StripeConnect {
      *
      * @param tokenId The token of the tokenised card.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#retrieve_token
      * @see https://stripe.com/docs/api#tokens
      */
     async retrieveToken(tokenId: string): Promise<any> {
         try {
-            let stripeToken = await stripe(this.stripeSecretKey).tokens.retrieve(tokenId);
-            return stripeToken;
+            return stripe(this.stripeSecretKey).tokens.retrieve(tokenId);
         } catch (error) {
             throw new CardError(error);
         }
@@ -151,18 +153,20 @@ export class StripeConnect {
      * Creates a new stripe card for the given customer. Keep in mind that the card has already been tokenised before
      * this method is called.
      *
-     * If a customerId is not available then a new customer must be created using the createCustomer() method of this service. 
+     * If a customerId is not available then a new customer must be created using the createCustomer() method of this service.
      *
      * @param customerId the Stripe id of the customer.
      * @param tokenId The token of the tokenised card.
      *
      * @return {Promise<PaymentCard>} a PaymentCard object.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#create_card
      */
     async createCard(customerId: string, tokenId: string): Promise<any> {
         try {
-            let stripeSource = await stripe(this.stripeSecretKey).customers.createSource(customerId, { source: tokenId });
+            const stripeSource = await stripe(this.stripeSecretKey).customers.createSource(customerId, { source: tokenId });
             return this.buildFromStripeCard(stripeSource);
         } catch (error) {
             throw new CardError(error);
@@ -177,12 +181,13 @@ export class StripeConnect {
      * @param customerId ID of the existing customer to retrieve the cards for.
      * @param cardId ID of the existing card to remove.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#delete_card
      */
     async removeCard(customerId: string, cardId: string): Promise<any> {
         try {
-            let deletion = await stripe(this.stripeSecretKey).customers.deleteCard(customerId, cardId);
-            return deletion;
+            return stripe(this.stripeSecretKey).customers.deleteCard(customerId, cardId);
         } catch (error) {
             throw new CardError(error);
         }
@@ -195,11 +200,13 @@ export class StripeConnect {
      *
      * @return {Promise<PaymentCard[]>} a Stripe PaymentCard[] object.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#list_cards
      */
     async loadCards(customerId: string): Promise<PaymentCard[]> {
         try {
-            let cards = await stripe(this.stripeSecretKey).customers.listCards(customerId);
+            const cards = await stripe(this.stripeSecretKey).customers.listCards(customerId);
             // transform stripe cards into payment cards and return to the client
             return (cards.data as any[]).map(stripeCard => this.buildFromStripeCard(stripeCard));
         } catch (error) {
@@ -218,11 +225,13 @@ export class StripeConnect {
      *
      * @return {Promise<any[]>} a Stripe Charge[] object.
      *
+     * @throws CardError
+     *
      * @see https://stripe.com/docs/api/node#list_cards
      */
     async loadCharges(stripeAccount: string, limit: number | undefined): Promise<any[]> {
         try {
-            let charges = await stripe(this.stripeSecretKey).charges.list({
+            const charges = await stripe(this.stripeSecretKey).charges.list({
                 limit: limit
             }, {
                 stripe_account: stripeAccount
@@ -267,20 +276,20 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Charge object.
      *
+     * @throws ChargeError
+     *
      * @see https://stripe.com/docs/api/node#charges
      * @see https://stripe.com/docs/api/node#create_charge
      * @see https://stripe.com/docs/charges
      */
     async createChargeByToken(stripeAccount: string, token: string, customer: string | undefined, amountInCents: number, applicationFeeInCents: number, currency: string, description: string, idempotency_key: string, metadata: any ): Promise<any> {
-        console.log('token: ', token);
-
         let delay = 1000;
         let retries = 0;
         let complete = false;
 
         while (retries < 3 && !complete) {    // retry this 3 times in the case of an error...any more and the delay is too much due to exponential backoff.
             try {
-                let charge = await stripe(this.stripeSecretKey).charges.create({
+                const charge = await stripe(this.stripeSecretKey).charges.create({
                     amount: amountInCents,
                     currency: currency,
                     description: description,
@@ -311,7 +320,7 @@ export class StripeConnect {
      * Creates a new charge for a customer. Must be a previously saved customer.
      *
      * @param stripeAccount The connected stripe account to credit.
-     * 
+     *
      * @param card The id of the card to be charged. If you also pass in a customer, the card must be the ID of a card belonging
      *      to the customer.
      *
@@ -343,14 +352,14 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Charge object.
      *
+     * @throws ChargeError
+     *
      * @see https://stripe.com/docs/api/node#charges
      * @see https://stripe.com/docs/api/node#create_charge
      * @see https://stripe.com/docs/charges
      */
     async createChargeByCard(stripeAccount: string, card: string, customer: string | undefined, amountInCents: number, applicationFeeInCents: number, currency: string, description: string, idempotency_key: string, metadata: any): Promise<any> {
-        console.log('card: ', card);
-
-        let cardToken = await stripe(this.stripeSecretKey).tokens.create({
+        const cardToken = await stripe(this.stripeSecretKey).tokens.create({
             card: card,
             customer: customer
         }, {
@@ -362,7 +371,7 @@ export class StripeConnect {
         let complete = false;
         while (retries < 3 && !complete) {  // retry this 3 times in the case of an error...any more and the delay is too much  due to exponential backoff.
             try {
-                let charge = await stripe(this.stripeSecretKey).charges.create({
+                const charge = await stripe(this.stripeSecretKey).charges.create({
                     amount: amountInCents,
                     currency: currency,
                     description: description,
@@ -395,7 +404,7 @@ export class StripeConnect {
      * @param chargeToken The identifier of the charge to refund.
      * @param reason  String indicating the reason for the refund. If set, possible values are duplicate, fraudulent, and
      *      requested_by_customer. Specifying fraudulent as the reason when you believe the charge to be fraudulent
-     *      will help us improve our fraud detection algorithms. Defaults to "request_by_customer".
+     *      will help us improve our fraud detection algorithms. Defaults to 'request_by_customer'.
      * @param refundApplicationFee Boolean indicating whether the application fee should be refunded when refunding this
      *      charge. If a full charge refund is given, the full application fee will be refunded. Else, the application fee
      *      will be refunded with an amount proportional to the amount of the charge refunded. An application fee can only
@@ -404,6 +413,8 @@ export class StripeConnect {
      *      the unrefunded amount remaining of the charge. If undefined then the full amount will be refunded.
      *
      * @return {Promise<any>} a Stripe Refund object.
+     *
+     * @throws RefundError
      *
      * @see https://stripe.com/docs/api/node#refunds
      * @see https://stripe.com/docs/refunds
@@ -415,7 +426,7 @@ export class StripeConnect {
 
         while (retries < 3 && !complete) {  // retry this 3 times in the case of an error...any more and the delay is too much  due to exponential backoff.
             try {
-                let refund = await stripe(this.stripeSecretKey).refunds.create({
+                const refund = await stripe(this.stripeSecretKey).refunds.create({
                     charge: chargeToken,
                     amount: amountInCents,
                     refund_application_fee: refundApplicationFee,
@@ -423,9 +434,9 @@ export class StripeConnect {
                 }, {
                     stripe_account: stripeAccount,
                 });
+                complete = true;
                 return refund;
             } catch (error) {
-                console.log(error);
                 if (error.rawType === 'invalid_request_error') {
                     return {
                         id: 'STRIPE_DASHBOARD',
@@ -468,11 +479,12 @@ export class StripeConnect {
      *
      * @returns {Promise<any>}
      *
+     * @throws StripeAuthorisationError
+     *
      * @see https://stripe.com/docs/connect/connecting-to-accounts
      * @see https://stripe.com/docs/connect/oauth-reference#post-token
      */
     async connectAccountToStripeConnect(tokenOrCode: string, grantType: 'authorization_code' | 'refresh_token' = 'authorization_code'): Promise<any> {
-
         const options: any = {
             method: 'POST',
             uri: this.stripeConnectAuthorizeURL,
@@ -503,6 +515,8 @@ export class StripeConnect {
      * @param stripeUserId The account you'd like to disconnect from.
      *
      * @returns {Promise<any>}
+     *
+     * @throws StripeAuthorisationError
      *
      * @see https://stripe.com/docs/connect/connecting-to-accounts
      * @see https://stripe.com/docs/connect/oauth-reference#post-deauthorize
