@@ -182,9 +182,9 @@ export class Gulpfile {
     @Task()
     tslint() {
         return gulp.src(['./src/**/*.ts', './test/**/*.ts'])
-            // .pipe(tslint({
-            //     formatter: 'verbose'
-            // }))
+            .pipe(tslint({
+                formatter: 'verbose'
+            }))
             .pipe(tslint.report(stylish, {
                 emitError: true,
                 sort: true,

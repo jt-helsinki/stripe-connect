@@ -103,7 +103,7 @@ export class StripeConnect {
      *
      * @param email The email address of the customer. It’s displayed alongside the customer in your dashboard and can be
      *      useful for searching and tracking. This can be unset by updating the value to null and then saving.
-     * @param token The token of the tokenised card.
+     * @param tokenId The token of the tokenised card.
      *
      * @return {Promise<any>} a Stripe Customer object.
      *
@@ -136,6 +136,8 @@ export class StripeConnect {
      * only supports integrations that make use of client-side tokenization.
      *
      * @param tokenId The token of the tokenised card.
+     *
+     * @return {Promise<any>} the tokensied representation of the card.
      *
      * @throws CardError
      *
@@ -197,7 +199,7 @@ export class StripeConnect {
     /**
      * Loads all payment cards of a given customer.
      *
-     * @param customer ID of the existing customer to retrieve the cards for.
+     * @param customerId ID of the existing customer to retrieve the cards for.
      *
      * @return {Promise<PaymentCard[]>} a Stripe PaymentCard[] object.
      *
@@ -365,9 +367,9 @@ export class StripeConnect {
      *          scope: 'read_write'
      *      }
      *
-     * @param param tokenOrCode The token received from the Stripe *AFTER* granting access to the platform.  This will be
+     * @param tokenOrCode The token received from the Stripe *AFTER* granting access to the platform.  This will be
      *          depending on the grant_type. See Stripe docs for further details.
-     * @param param grantType 'authorization_code' | 'refresh_token' authorization_code when turning an authorization
+     * @param grantType 'authorization_code' | 'refresh_token' authorization_code when turning an authorization
      *          code into an access token, or refresh_token when using a refresh token to get a new access token.
      *
      * @returns {Promise<any>}
@@ -461,7 +463,7 @@ export class StripeConnect {
 
     /**
      * Makes the actual charge.
-     * 
+     *
      * @param stripeAccount The connected stripe account to credit.
      * @param token For most Stripe users, the source of every charge is a credit or debit card. This hash is then the card
      *      object describing that card. This is created by the Stripe.js front end javascript.
