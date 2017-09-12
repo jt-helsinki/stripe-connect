@@ -5,6 +5,7 @@ import {RefundError} from '../error/RefundError';
 import {StripeConnectConfiguration} from '../configuration/StripeConnectConfiguration';
 import * as rp from 'request-promise-native';
 import {PaymentCard} from '../model/PaymentCard';
+import {ChargeParameters} from '../model/ChargeParameters';
 const stripe = require('stripe');
 
 
@@ -158,7 +159,7 @@ export class StripeConnect {
      * @param customerId the Stripe id of the customer.
      * @param tokenId The token of the tokenised card.
      *
-     * @return {Promise<PaymentCard>} a PaymentCard object.
+     * @return {Promise<PaymentCard>} a PaymentCard object. See Stripe docs for futher details.
      *
      * @throws CardError
      *
@@ -223,9 +224,9 @@ export class StripeConnect {
      * @param limit A limit on the number of objects to be returned. Limit can range between 1 and 100 items,
      *      and the default is 10 items.
      *
-     * @return {Promise<any[]>} a Stripe Charge[] object.
+     * @return {Promise<any[]>} a Stripe Charge[] object. See Stripe docs for futher details.
      *
-     * @throws CardError
+     * @throws CardError the charge was not successful. i.e. declined card.
      *
      * @see https://stripe.com/docs/api/node#list_cards
      */
@@ -236,7 +237,7 @@ export class StripeConnect {
             }, {
                 stripe_account: stripeAccount
             });
-            return (charges.data as any[])
+            return (charges.data as any[]);
         } catch (error) {
             throw new CardError(error);
         }
@@ -246,111 +247,31 @@ export class StripeConnect {
      * Creates a new charge by a token id. Can be used for customers whose card details we do no hold.
      *
      * @param stripeAccount The connected stripe account to credit.
-     *
      * @param token For most Stripe users, the source of every charge is a credit or debit card. This hash is then the card
      *      object describing that card. This is created by the Stripe.js front end javascript.
+     * @param paramters the object containing the specifics of the financial transaction. Must implement the ChargeParameters interface.
      *
-     * @param customer ID of the existing customer this charge is for, if one exists.
+     * @return {Promise<any>} a Stripe Charge object. See Stripe docs for futher details.
      *
-     * @param amountInCents The value to be charged to the customer. A positive integer in the smallest currency unit (e.g.,
-     *      100 cents to charge $1.00 or 100 to charge ¥100, a zero-decimal currency) representing how much to charge the
-     *      card. The minimum amount is $0.50 US or equivalent in charge currency.
-     *
-     * @param applicationFeeInCents A fee in cents that will be applied to the charge and transferred to the application owner's
-     *      Stripe account.
-     *
-     * @param currency The currency of the transaction.  3-letter ISO code for currency.
-     *
-     * @param description An arbitrary string which you can attach to a Charge object. It is displayed when in the web interface
-     *      alongside the charge. Note that if you use Stripe to send automatic email receipts to your customers, your
-     *      receipt emails will include the description of the charge(s) that they are describing.
-     *
-     * @param idempotency_key  A unique key used for ensuring the card is not charged multiple times in the case of an error.
-     *          How you create unique keys is up to you, but Stripe suggests using V4 UUIDs or another appropriately random string.
-     *          Stripe will always send back the same response for requests made with the same key, and keys can't be reused with
-     *          different request parameters. Keys expire after 24 hours.
-     *
-     * @param metadata Set of key/value pairs that you can attach to an object. It can be useful for storing additional
-     *      information about the object in a structured format. Individual keys can be unset by posting an empty value
-     *      to them. All keys can be unset by posting an empty value to metadata.
-     *
-     * @return {Promise<any>} a Stripe Charge object.
-     *
-     * @throws ChargeError
+     * @throws ChargeError the charge was not successful. i.e. declined card.
      *
      * @see https://stripe.com/docs/api/node#charges
      * @see https://stripe.com/docs/api/node#create_charge
      * @see https://stripe.com/docs/charges
      */
-    async createChargeByToken(stripeAccount: string, token: string, customer: string | undefined, amountInCents: number, applicationFeeInCents: number, currency: string, description: string, idempotency_key: string, metadata: any ): Promise<any> {
-        let delay = 1000;
-        let retries = 0;
-        let complete = false;
-
-        while (retries < 3 && !complete) {    // retry this 3 times in the case of an error...any more and the delay is too much due to exponential backoff.
-            try {
-                const charge = await stripe(this.stripeSecretKey).charges.create({
-                    amount: amountInCents,
-                    currency: currency,
-                    description: description,
-                    customer: customer,
-                    application_fee: applicationFeeInCents,
-                    source: token,
-                    metadata: metadata
-                }, {
-                    stripe_account: stripeAccount,
-                    idempotency_key: idempotency_key
-                });
-                complete = true;
-                return charge;
-            } catch (error) {
-                if (retries < 2) {
-                    await this.runWithDelay(delay, () => console.log(error));
-                    delay = delay * 2;
-                    retries++;
-                } else {
-                    throw new ChargeError(error);
-                }
-
-            }
-        }
+    async createChargeByToken(stripeAccount: string, token: string, paramters: ChargeParameters ): Promise<any> {
+        return this.makeCharge(stripeAccount, token, paramters);
     }
 
     /**
      * Creates a new charge for a customer. Must be a previously saved customer.
      *
      * @param stripeAccount The connected stripe account to credit.
-     *
      * @param card The id of the card to be charged. If you also pass in a customer, the card must be the ID of a card belonging
      *      to the customer.
+     * @param paramters the object containing the specifics of the financial transaction. Must implement the ChargeParameters interface.
      *
-     * @param customer The customer for whom the card belongs to. The customer (owned by the application's
-     *      account) to create a token for. This can only be used with an OAuth access token or Stripe-Account header.
-     *      For more details, see Stripe's shared customers documentation.
-     *
-     * @param amountInCents The value to be charged to the customer. A positive integer in the smallest currency unit (e.g.,
-     *      100 cents to charge $1.00 or 100 to charge ¥100, a zero-decimal currency) representing how much to charge the
-     *      card. The minimum amount is $0.50 US or equivalent in charge currency.
-     *
-     * @param applicationFeeInCents A fee in cents that will be applied to the charge and transferred to the application owner's
-     *      Stripe account.
-     *
-     * @param currency The currency of the transaction.  3-letter ISO code for currency.
-     *
-     * @param description An arbitrary string which you can attach to a Charge object. It is displayed when in the web interface
-     *      alongside the charge. Note that if you use Stripe to send automatic email receipts to your customers, your
-     *      receipt emails will include the description of the charge(s) that they are describing.
-     *
-     * @param idempotency_key  A unique key used for ensuring the card is not charged multiple times in the case of an error.
-     *          How you create unique keys is up to you, but Stripe suggests using V4 UUIDs or another appropriately random string.
-     *          Stripe will always send back the same response for requests made with the same key, and keys can't be reused with
-     *          different request parameters. Keys expire after 24 hours.
-     *
-     * @param metadata Set of key/value pairs that you can attach to an object. It can be useful for storing additional
-     *      information about the object in a structured format. Individual keys can be unset by posting an empty value
-     *      to them. All keys can be unset by posting an empty value to metadata.
-     *
-     * @return {Promise<any>} a Stripe Charge object.
+     * @return {Promise<any>} a Stripe Charge object. See Stripe docs for futher details.
      *
      * @throws ChargeError
      *
@@ -358,42 +279,14 @@ export class StripeConnect {
      * @see https://stripe.com/docs/api/node#create_charge
      * @see https://stripe.com/docs/charges
      */
-    async createChargeByCard(stripeAccount: string, card: string, customer: string | undefined, amountInCents: number, applicationFeeInCents: number, currency: string, description: string, idempotency_key: string, metadata: any): Promise<any> {
+    async createChargeByCard(stripeAccount: string, card: string, paramters: ChargeParameters): Promise<any> {
         const cardToken = await stripe(this.stripeSecretKey).tokens.create({
             card: card,
-            customer: customer
+            customer: paramters.customer
         }, {
             stripe_account: stripeAccount,
         });
-
-        let delay = 1000;
-        let retries = 0;
-        let complete = false;
-        while (retries < 3 && !complete) {  // retry this 3 times in the case of an error...any more and the delay is too much  due to exponential backoff.
-            try {
-                const charge = await stripe(this.stripeSecretKey).charges.create({
-                    amount: amountInCents,
-                    currency: currency,
-                    description: description,
-                    application_fee: applicationFeeInCents,
-                    source: cardToken.id,
-                    metadata: metadata
-                }, {
-                    stripe_account: stripeAccount,
-                    idempotency_key: idempotency_key
-                });
-                complete = true;
-                return charge;
-            } catch (error) {
-                if (retries < 2) {
-                    await this.runWithDelay(delay, () => console.log(error));
-                    delay = delay * 2;
-                    retries++;
-                } else {
-                    throw new ChargeError(error);
-                }
-            }
-        }
+        return this.makeCharge(stripeAccount, cardToken.id, paramters);
     }
 
 
@@ -412,7 +305,7 @@ export class StripeConnect {
      * @param amountInCents A positive integer in cents representing how much of this charge to refund. Can only refund up to
      *      the unrefunded amount remaining of the charge. If undefined then the full amount will be refunded.
      *
-     * @return {Promise<any>} a Stripe Refund object.
+     * @return {Promise<any>} a Stripe Refund object. See Stripe docs for futher details.
      *
      * @throws RefundError
      *
@@ -565,5 +458,53 @@ export class StripeConnect {
         paymentCard.lastFourDigits = stripeCard.last4;
         return paymentCard;
     }
+
+    /**
+     * Makes the actual charge.
+     * 
+     * @param stripeAccount The connected stripe account to credit.
+     * @param token For most Stripe users, the source of every charge is a credit or debit card. This hash is then the card
+     *      object describing that card. This is created by the Stripe.js front end javascript.
+     * @param paramters the object containing the specifics of the financial transaction. Must implement the ChargeParameters interface.
+     *
+     * @return {Promise<any>} Stripe charge object. See Stripe docs.
+     *
+     * @throws the charge was not successful. i.e. declined card.
+     */
+    private async makeCharge(stripeAccount: string, token: string, paramters: ChargeParameters): Promise<any> {
+        let delay = 1000;
+        let retries = 0;
+        let complete = false;
+
+        while (retries < 3 && !complete) {    // retry this 3 times in the case of an error...any more and the delay is too much due to exponential backoff.
+            try {
+                const charge = await stripe(this.stripeSecretKey).charges.create({
+                    amount: paramters.amountInCents,
+                    currency: paramters.currency,
+                    description: paramters.description,
+                    application_fee: paramters.applicationFeeInCents,
+                    source: token,
+                    metadata: paramters.metadata
+                }, {
+                    stripe_account: stripeAccount,
+                    idempotency_key: paramters.idempotency_key
+                });
+                complete = true;
+                return charge;
+            } catch (error) {
+                if (retries < 2) {
+                    await this.runWithDelay(delay, () => console.log(error));
+                    delay = delay * 2;
+                    retries++;
+                } else {
+                    throw new ChargeError(error);
+                }
+
+            }
+        }
+
+    }
+
+
 
 }

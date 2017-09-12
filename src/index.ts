@@ -5,3 +5,4 @@ export * from './error/ChargeError';
 export * from './error/RefundError';
 export * from './error/StripeAuthorisationError';
 export * from './model/PaymentCard';
+export * from './model/ChargeParameters';

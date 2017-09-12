@@ -1,6 +1,6 @@
 # stripe-connect
 
-Provides a simple api for working with the Stripe Connect API. As it currently stands, this class only deals with Standard (Standalone)
+Provides a simple promise based api for working with the Stripe Connect API. As it currently stands, this class only deals with Standard (Standalone)
 accounts and direct charges.
 
 - create customers
@@ -28,10 +28,6 @@ Using this direct charge  approach:
 - Your platform’s balance is only increased via application fees
  
 It would be worth familiarising oneself with the oauth workflow for standard accounts.
- 
-## NPM Installation
-
-`npm install --save @raceloop/stripe.raceloop`
 
 ## Developers
 
@@ -53,12 +49,9 @@ https://stripe.com/docs/connect/direct-charges
 
 https://stripe.com/docs/connect/standard-accounts#oauth-flow
 
-
-## Typings
-
-Typescript typings are included with this api.
-
 ## Usage
+
+This api is to be used server side only.
 
 ```
 /**
@@ -76,12 +69,16 @@ config.stripeSecretKey = 'sk_test_NRwn1XGzA93GAsdDQd3UM7qg';
 const stripeConnect = new StripeConnect(config);
 ```
 
-Now start calling operations on the newly created object.
+
+Best not to place the configuration parameters into code. Instead, they can (for example) be placed in config files (remember to add your config
+file to .gitignore etc) or into environment variables.
+
+The test class gives a number of examples that can be used to help get started with using this api.
 
 ## Stripe Setup
 
 Create the Stripe account for your platform as per Stripe documentation. Set up the
-configuration object accepts the values taken from
+configuration object accepts the values taken from your Stripe console. 
 
 ## Licence
 

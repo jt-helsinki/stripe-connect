@@ -2,6 +2,17 @@ import {StripeConnectConfiguration} from "../src/configuration/StripeConnectConf
 
 export class TestingStripeConnectionConfiguration {
 
+    /**
+     * The connect customer. Taken from your Stripe console.
+     */
+    static readonly STRIPE_CUSTOMER = 'cus_B8Fbaccxxxxxxxx';
+
+
+    /**
+     * The connected stripe account. Taken from the Stripe console.
+     */
+    static readonly STRIPE_ACCOUNT = 'acct_1AB1KmLwxxxxxxxx';
+
 
     // -------------------------------------------------------------------------
     // Static functions.
