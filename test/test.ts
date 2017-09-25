@@ -69,7 +69,7 @@ class UnitTest {
 
         this.stripeConnect.createChargeByToken(TestingStripeConnectionConfiguration.STRIPE_ACCOUNT, 'tok_chargeDeclined', paramters).catch((error) => {
             try {
-                expect(error.message).to.equal('Error: Your card was declined.');
+                expect(error.message).to.equal('Your card was declined.');
                 done();
             } catch (error) {
                 done(error);

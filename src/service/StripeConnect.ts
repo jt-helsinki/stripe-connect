@@ -1,11 +1,7 @@
-import {StripeAuthorisationError} from '../error/StripeAuthorisationError';
-import {CardError} from '../error/CardError';
-import {ChargeError} from '../error/ChargeError';
-import {RefundError} from '../error/RefundError';
 import {StripeConnectConfiguration} from '../configuration/StripeConnectConfiguration';
 import * as rp from 'request-promise-native';
 import {PaymentCard} from '../model/PaymentCard';
-import {ChargeParameters} from '../model/ChargeParameters';
+import {ChargeParameters} from './parameters/ChargeParameters';
 const stripe = require('stripe');
 
 
@@ -107,19 +103,13 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Customer object.
      *
-     * @throws CardError
-     *
      * @see https://stripe.com/docs/api/node#create_customer
      */
     async createCustomer(email: string, tokenId: string): Promise<any> {
-        try {
-            return stripe(this.stripeSecretKey).customers.create({
-                email: email,
-                source: tokenId,
-            });
-        } catch (error) {
-            throw new CardError(error);
-        }
+        return stripe(this.stripeSecretKey).customers.create({
+            email: email,
+            source: tokenId,
+        });
     }
 
     /**
@@ -139,17 +129,13 @@ export class StripeConnect {
      *
      * @return {Promise<any>} the tokensied representation of the card.
      *
-     * @throws CardError
+     * @throws Error Throws an error when an  invalid token ID was provided.
      *
      * @see https://stripe.com/docs/api/node#retrieve_token
      * @see https://stripe.com/docs/api#tokens
      */
     async retrieveToken(tokenId: string): Promise<any> {
-        try {
-            return stripe(this.stripeSecretKey).tokens.retrieve(tokenId);
-        } catch (error) {
-            throw new CardError(error);
-        }
+        return stripe(this.stripeSecretKey).tokens.retrieve(tokenId);
     }
 
     /**
@@ -163,19 +149,11 @@ export class StripeConnect {
      *
      * @return {Promise<PaymentCard>} a PaymentCard object. See Stripe docs for futher details.
      *
-     * @throws CardError
-     *
      * @see https://stripe.com/docs/api/node#create_card
      */
     async createCard(customerId: string, tokenId: string): Promise<any> {
-        try {
-            const stripeSource = await stripe(this.stripeSecretKey).customers.createSource(customerId, { source: tokenId });
-            return this.buildFromStripeCard(stripeSource);
-        } catch (error) {
-            throw new CardError(error);
-        }
-
-
+        const stripeSource = await stripe(this.stripeSecretKey).customers.createSource(customerId, { source: tokenId });
+        return this.buildFromStripeCard(stripeSource);
     }
 
     /**
@@ -184,16 +162,10 @@ export class StripeConnect {
      * @param customerId ID of the existing customer to retrieve the cards for.
      * @param cardId ID of the existing card to remove.
      *
-     * @throws CardError
-     *
      * @see https://stripe.com/docs/api/node#delete_card
      */
     async removeCard(customerId: string, cardId: string): Promise<any> {
-        try {
-            return stripe(this.stripeSecretKey).customers.deleteCard(customerId, cardId);
-        } catch (error) {
-            throw new CardError(error);
-        }
+        return stripe(this.stripeSecretKey).customers.deleteCard(customerId, cardId);
     }
 
     /**
@@ -203,18 +175,12 @@ export class StripeConnect {
      *
      * @return {Promise<PaymentCard[]>} a Stripe PaymentCard[] object.
      *
-     * @throws CardError
-     *
      * @see https://stripe.com/docs/api/node#list_cards
      */
     async loadCards(customerId: string): Promise<PaymentCard[]> {
-        try {
-            const cards = await stripe(this.stripeSecretKey).customers.listCards(customerId);
-            // transform stripe cards into payment cards and return to the client
-            return (cards.data as any[]).map(stripeCard => this.buildFromStripeCard(stripeCard));
-        } catch (error) {
-            throw new CardError(error);
-        }
+        const cards = await stripe(this.stripeSecretKey).customers.listCards(customerId);
+        // transform stripe cards into payment cards and return to the client
+        return (cards.data as any[]).map(stripeCard => this.buildFromStripeCard(stripeCard));
     }
 
     /**
@@ -228,21 +194,15 @@ export class StripeConnect {
      *
      * @return {Promise<any[]>} a Stripe Charge[] object. See Stripe docs for futher details.
      *
-     * @throws CardError the charge was not successful. i.e. declined card.
-     *
      * @see https://stripe.com/docs/api/node#list_cards
      */
     async loadCharges(stripeAccount: string, limit: number | undefined): Promise<any[]> {
-        try {
-            const charges = await stripe(this.stripeSecretKey).charges.list({
-                limit: limit
-            }, {
-                stripe_account: stripeAccount
-            });
-            return (charges.data as any[]);
-        } catch (error) {
-            throw new CardError(error);
-        }
+        const charges = await stripe(this.stripeSecretKey).charges.list({
+            limit: limit
+        }, {
+            stripe_account: stripeAccount
+        });
+        return (charges.data as any[]);
     }
 
     /**
@@ -255,7 +215,8 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Charge object. See Stripe docs for futher details.
      *
-     * @throws ChargeError the charge was not successful. i.e. declined card.
+     * @throws Error Throws an error if something goes wrong. A common source of error is an invalid or expired card,
+     *      or a valid card with insufficient available balance.
      *
      * @see https://stripe.com/docs/api/node#charges
      * @see https://stripe.com/docs/api/node#create_charge
@@ -275,7 +236,8 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Charge object. See Stripe docs for futher details.
      *
-     * @throws ChargeError
+     * @throws Error Throws an error if something goes wrong. A common source of error is an invalid or expired card,
+     *      or a valid card with insufficient available balance.
      *
      * @see https://stripe.com/docs/api/node#charges
      * @see https://stripe.com/docs/api/node#create_charge
@@ -309,7 +271,7 @@ export class StripeConnect {
      *
      * @return {Promise<any>} a Stripe Refund object. See Stripe docs for futher details.
      *
-     * @throws RefundError
+     * @throws Error Throws an error if the charge has already been refunded or an invalid charge identifier was provided.
      *
      * @see https://stripe.com/docs/api/node#refunds
      * @see https://stripe.com/docs/refunds
@@ -344,7 +306,7 @@ export class StripeConnect {
                     delay = delay * 2;
                     retries++;
                 } else {
-                    throw new RefundError(error);
+                    throw error;
                 }
             }
         }
@@ -400,7 +362,7 @@ export class StripeConnect {
             const responseFromServer: any =  await rp.post(options);
             return JSON.parse(responseFromServer);
         } catch (error) {
-            throw new StripeAuthorisationError(error.error);
+            throw error;
         }
     }
 
@@ -432,7 +394,7 @@ export class StripeConnect {
             const responseFromServer: any =  await rp.post(options);
             return JSON.parse(responseFromServer);
         } catch (error) {
-            throw new StripeAuthorisationError(error.error);
+            throw error;
         }
     }
 
@@ -499,7 +461,7 @@ export class StripeConnect {
                     delay = delay * 2;
                     retries++;
                 } else {
-                    throw new ChargeError(error);
+                    throw error;
                 }
 
             }
