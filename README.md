@@ -51,6 +51,8 @@ https://stripe.com/docs/connect/standard-accounts#oauth-flow
 
 ## Usage
 
+Because this API satisfies a fraction of Stripe's API it has not been NPM'd. This will give you the chance to extend it as you see fit.
+
 This api is to be used server side only.
 
 ```
