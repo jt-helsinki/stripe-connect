@@ -6,14 +6,14 @@
     "main": "index.js",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/raceloop/stripe-connect.git"
+        "url": "git+https://github.com/jt-helsinki/stripe-connect.git"
     },
     "author": "Jordan Thomas",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/raceloop/stripe-connect/issues"
+        "url": "https://github.com/jt-helsinki/stripe-connect/issues"
     },
-    "homepage": "https://github.com/raceloop/stripe-connect#readme",
+    "homepage": "https://github.com/jt-helsinki/stripe-connect#readme",
     "nyc": {
         "check-coverage": true,
         "lines": 80,
